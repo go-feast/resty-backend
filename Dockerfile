@@ -1,0 +1,30 @@
+ARG BUILD_TARGET
+ARG BUILD_PROJECT
+
+FROM golang:1.23 AS base
+
+ARG BUILD_TARGET
+ARG BUILD_PROJECT
+
+ENV TARGET_BINARY=${BUILD_TARGET}
+ENV TARGET_PROJECT=${BUILD_PROJECT}
+
+WORKDIR /app
+
+COPY go.mod /app
+
+COPY . /app
+
+ENV BINARY=${TARGET_PROJECT}-${TARGET_BINARY}
+
+RUN CGO_ENABLED=0 \
+    go build -o /app/bin/app\
+     /app/cmd/${TARGET_PROJECT}/${TARGET_BINARY}/main.go \
+
+FROM alpine as binary
+
+WORKDIR /app
+
+COPY --from=base /app/bin/app ./
+
+ENTRYPOINT ["./app"]
