@@ -7,12 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//TODO: possible to create an interface with operation method, which would be passed to a handler
-// interface {
-//     Operation(values map[string]any) error
-// }
-// To perform an operation, behavior depends on order state(cancel, finished cooking etc.)
-
 func (h *Handler) OrderCanceled(msg *message.Message) error {
 	var (
 		ctx = msg.Context()

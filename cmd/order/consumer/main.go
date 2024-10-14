@@ -37,7 +37,7 @@ func main() {
 
 	err := envconfig.Process(ctx, c)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to process env vars")
+		log.Fatal().Err(err).Msg("Failed to process env vars") //nolint:gocritic
 	}
 
 	log.Info().Any("config", c).Send()
@@ -57,20 +57,22 @@ func main() {
 			Str("driver", driverName).
 			Msg("failed to connect to database")
 	}
-	subscriberSQL, err := pubsub.NewSQLSubscriber(db, logging.WatermillLoggerAdapter{Log: log.Logger})
+
+	subscriberSQL, err := pubsub.NewSQLSubscriber(db, logging.NewWatermillLogger())
 	if err != nil {
 		panic(err)
 	}
 
-	publisherKafka, err := pubsub.NewKafkaPublisher(c.Kafka.KafkaURL, logging.WatermillLoggerAdapter{Log: log.Logger})
+	publisherKafka, err := pubsub.NewKafkaPublisher(c.Kafka.KafkaURL, logging.NewWatermillLogger())
 	if err != nil {
 		panic(err)
 	}
 
-	subscriberKafka, err := pubsub.NewKafkaSubscriber(c.Kafka.KafkaURL, logging.WatermillLoggerAdapter{Log: log.Logger})
+	subscriberKafka, err := pubsub.NewKafkaSubscriber(c.Kafka.KafkaURL, logging.NewWatermillLogger())
 	if err != nil {
 		panic(err)
 	}
+
 	var (
 		orderRepository = repository.NewOrderRepository(db)
 	)

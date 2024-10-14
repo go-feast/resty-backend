@@ -25,21 +25,15 @@ services:
       METRICS_PORT: 8083
     build:
       dockerfile: Dockerfile
-      context: ./
-      target: dev_consumer
+      context: .
+      target: binary
       args:
-        - metric_port_consumer=8083
+        METRIC_PORT: 8083
+        BUILD_TARGET: consumer
+        BUILD_PROJECT: order
     restart: on-failure
     volumes:
       - *service-volume
-    command:
-      - "CompileDaemon"
-      - "-log-prefix=false"
-      - "-graceful-timeout=10"
-      - "-graceful-kill=true"
-      - "-exclude-dir=.git -exclude-dir=.run -exclude-dir=.github"
-      - "-build=/go/bin/task build-api-consumer"
-      - "-command=/app/bin/api-consumer"
     ports:
       - "8083:8083" # metric service port. Make sure u change it in deployment/development/external/prometheus.yml
     healthcheck:
@@ -67,22 +61,16 @@ services:
       SERVER_IDLETIMEOUT: 5s
     build:
       dockerfile: Dockerfile
-      context: ./
-      target: dev_service
+      context: .
+      target: binary
       args:
-        - service_port=8080
-        - service_metrics_port=8081
+        SERVICE_PORT: 8080
+        METRIC_PORT: 8081
+        BUILD_TARGET: consumer
+        BUILD_PROJECT: order
     restart: on-failure
     volumes:
       - *service-volume
-    command:
-      - "CompileDaemon"
-      - "-log-prefix=false"
-      - "-graceful-timeout=10"
-      - "-graceful-kill=true"
-      - "-exclude-dir=.git -exclude-dir=.run -exclude-dir=.github"
-      - "-build=/go/bin/task build-api-service"
-      - "-command=/app/bin/api-service"
     ports:
       - "8080:8080" # service port
       - "8081:8081" # metric service port

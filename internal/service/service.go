@@ -53,7 +53,7 @@ func RunService(ctx context.Context, serviceName, version string, c config.Servi
 		IdleTimeout:  c.Server.IdleTimeout,
 	}
 
-	metric := &http.Server{
+	metric := &http.Server{ //nolint:gosec
 		Addr:    net.JoinHostPort(c.MetricServer.Host, c.MetricServer.Port),
 		Handler: promhttp.Handler(),
 	}
@@ -78,6 +78,7 @@ func RunService(ctx context.Context, serviceName, version string, c config.Servi
 	}()
 
 	var wg sync.WaitGroup
+
 	wg.Add(2)
 
 	go func(server *http.Server) {

@@ -101,11 +101,11 @@ func (s *StateOperator) trySetState(next State) (bool, error) {
 		return false, errors.Wrapf(ErrOrderClosed, "cannot set state: %s", next.Name)
 	}
 
-	if s.o.Is(Canceled) {
+	if s.o.Is(Canceled) && next != Closed {
 		return false, errors.Wrapf(ErrOrderCanceled, "cannot set state: %s", next.Name)
 	}
 
-	if next == Canceled || next == Closed {
+	if next == Canceled {
 		s.setState(next)
 		return true, nil
 	}

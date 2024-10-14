@@ -1,30 +1,29 @@
 ARG BUILD_TARGET
 ARG BUILD_PROJECT
-
+ARG SERVICE_PORT
+ARG METRIC_PORT
 FROM golang:1.23 AS base
 
 ARG BUILD_TARGET
 ARG BUILD_PROJECT
 
-ENV TARGET_BINARY=${BUILD_TARGET}
-ENV TARGET_PROJECT=${BUILD_PROJECT}
+WORKDIR /src
 
-WORKDIR /app
+COPY go.mod .
+COPY go.sum .
 
-COPY go.mod /app
+COPY . .
 
-COPY . /app
+RUN CGO_ENABLED=0 go build -o /bin/app /src/cmd/$BUILD_PROJECT/$BUILD_TARGET/main.go
 
-ENV BINARY=${TARGET_PROJECT}-${TARGET_BINARY}
+FROM alpine:latest as binary
 
-RUN CGO_ENABLED=0 \
-    go build -o /app/bin/app\
-     /app/cmd/${TARGET_PROJECT}/${TARGET_BINARY}/main.go \
+ARG SERVICE_PORT
+ARG METRIC_PORT
 
-FROM alpine as binary
+EXPOSE $SERVICE_PORT
+EXPOSE $METRIC_PORT
 
-WORKDIR /app
+COPY --from=base /bin/app /bin/
 
-COPY --from=base /app/bin/app ./
-
-ENTRYPOINT ["./app"]
+ENTRYPOINT ["/bin/app"]

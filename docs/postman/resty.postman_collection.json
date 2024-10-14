@@ -5,5 +5,124 @@
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "33658480"
 	},
-	"item": []
+	"item": [
+		{
+			"name": "order",
+			"item": [
+				{
+					"name": "metric",
+					"item": []
+				},
+				{
+					"name": "create order",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer_id\": {{$randomUUID}},\n    \"restaurant_id\": {{$randomUUID}},\n    \"meals\": [\n        {{$randomUUID}},\n        {{$randomUUID}}\n    ],\n    \"destination\": {\n        \"latitude\": {{$randomLatitude}},\n        \"longitude\": {{$randomLongitude}}\n    }\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/api/v1/orders",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "server started",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{server}}/health",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "started",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{server}}/health",
+									"host": [
+										"{{server}}"
+									],
+									"path": [
+										"health"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "Date",
+									"value": "Tue, 01 Oct 2024 21:27:34 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "0"
+								}
+							],
+							"cookie": [],
+							"body": null
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "order-id",
+			"value": "",
+			"type": "string"
+		}
+	]
 }

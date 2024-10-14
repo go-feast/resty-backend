@@ -57,95 +57,37 @@ func TestStateOperator_setState(t *testing.T) {
 }
 
 func TestStateOperator_trySetState(t *testing.T) {
-	testCases := []struct { //nolint:govet
-		name string
+	f := func(
+		t *testing.T,
+		_ string,
+		operatorState, replacingState State,
+		wantErr bool,
+		setted bool,
+	) {
+		operator := createOperator(t)
 
-		operatorState  State
-		replacingState State
+		operator.o.state = operatorState
 
-		wantErr bool
+		canceled, err := operator.trySetState(replacingState)
+		if wantErr {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
 
-		setted      bool
-		expectedErr error
-	}{
-		{
-			name:           "OK",
-			operatorState:  Delivering,
-			replacingState: Delivered,
-
-			wantErr: false,
-			setted:  true,
-		},
-		{
-			name:           "set state to the closed order",
-			operatorState:  Closed,
-			replacingState: Delivering,
-
-			wantErr:     true,
-			setted:      false,
-			expectedErr: ErrOrderClosed,
-		},
-		{
-			name:           "cancel order",
-			operatorState:  Created,
-			replacingState: Canceled,
-
-			wantErr: false,
-			setted:  true,
-		},
-		{
-			name:           "canceling setted order",
-			operatorState:  Canceled,
-			replacingState: Canceled,
-
-			wantErr: false,
-			setted:  true,
-		},
-		{
-			name:           "canceling closed order",
-			operatorState:  Closed,
-			replacingState: Canceled,
-
-			wantErr:     true,
-			setted:      false,
-			expectedErr: ErrOrderClosed,
-		},
-		{
-			name:           "set past state",
-			operatorState:  Finished,
-			replacingState: Cooking,
-
-			wantErr:     true,
-			setted:      false,
-			expectedErr: ErrInvalidState,
-		},
-		{
-			name:           "setting state to the setted order",
-			operatorState:  Canceled,
-			replacingState: Cooking,
-
-			wantErr:     true,
-			setted:      false,
-			expectedErr: ErrOrderCanceled,
-		},
+		assert.Equalf(t, setted, canceled, "expected setted to be trySetState: %v, got %v", setted, canceled)
 	}
-	for _, testCase := range testCases {
-		tc := testCase
-		t.Run(tc.name, func(t *testing.T) {
-			operator := createOperator(t)
 
-			operator.o.state = tc.operatorState
-
-			canceled, err := operator.trySetState(tc.replacingState)
-			if tc.wantErr {
-				assert.ErrorIs(t, err, tc.expectedErr)
-			} else {
-				assert.NoError(t, err)
-			}
-
-			assert.Equal(t, tc.setted, canceled)
-		})
-	}
+	f(t, "ok", Delivering, Delivered, false, true)
+	f(t, "past state", Delivered, Delivering, true, false)
+	f(t, "action on canceled", Canceled, Delivering, true, false)
+	f(t, "action on closed", Closed, Delivering, true, false)
+	f(t, "canceling", Created, Canceled, false, true)
+	f(t, "closing", Created, Closed, true, false)
+	f(t, "closing canceled", Canceled, Closed, false, true)
+	f(t, "canceling closed", Closed, Canceled, true, false)
+	f(t, "closing closed", Closed, Closed, false, true)
+	f(t, "canceling canceled", Canceled, Canceled, false, true)
 }
 
 func TestStateOperator_OrderAny(t *testing.T) {

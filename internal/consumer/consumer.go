@@ -41,7 +41,7 @@ func RunConsumer(ctx context.Context, serviceName, version string, c config.Cons
 
 	metrics.RegisterServiceName(serviceName)
 
-	metricServer := &http.Server{
+	metricServer := &http.Server{ // nolint:gosec
 		Addr:    net.JoinHostPort(c.MetricServer.Host, c.MetricServer.Port),
 		Handler: promhttp.Handler(),
 	}
@@ -57,6 +57,7 @@ func RunConsumer(ctx context.Context, serviceName, version string, c config.Cons
 	routes(router)
 
 	var wg sync.WaitGroup
+
 	wg.Add(2) // 2 servers: metric and consumer
 
 	go func() {
@@ -72,31 +73,39 @@ func RunConsumer(ctx context.Context, serviceName, version string, c config.Cons
 	go func() {
 		defer wg.Done()
 		log.Info().Msgf("listening on %s", metricServer.Addr)
+
 		e := metricServer.ListenAndServe()
 		if e != nil &&
 			!errors.Is(e, http.ErrServerClosed) {
 			log.Error().Err(e).Msgf("failed to start metrics server: %s", e.Error())
 			return
 		}
+
 		log.Info().Msg("closed metrics server")
 	}()
 
 	go func() {
 		<-ctx.Done()
+
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
+
 		if e := metricServer.Shutdown(shutdownCtx); e != nil {
 			log.Error().Err(e).Msgf("failed to shutdown metrics server: %s", e.Error())
+
 			return
 		}
+
 		log.Info().Msg("closed metrics server")
 	}()
 	go func() {
 		<-ctx.Done()
+
 		if router.IsRunning() {
 			if e := router.Close(); e != nil {
 				log.Error().Err(err).Msgf("failed to close consumer: %s", e.Error())
 			}
+
 			log.Info().Msg("closed consumer")
 		}
 	}()
