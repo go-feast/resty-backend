@@ -2,7 +2,6 @@ version: '3.9'
 
 networks:
   api:
-    driver: bridge
 
 x-service-volume:  &service-volume
   type: bind
@@ -32,8 +31,6 @@ services:
         BUILD_TARGET: consumer
         BUILD_PROJECT: order
     restart: on-failure
-    volumes:
-      - *service-volume
     ports:
       - "8083:8083" # metric service port. Make sure u change it in deployment/development/external/prometheus.yml
     healthcheck:
@@ -66,16 +63,14 @@ services:
       args:
         SERVICE_PORT: 8080
         METRIC_PORT: 8081
-        BUILD_TARGET: consumer
+        BUILD_TARGET: server
         BUILD_PROJECT: order
     restart: on-failure
-    volumes:
-      - *service-volume
     ports:
       - "8080:8080" # service port
       - "8081:8081" # metric service port
     healthcheck:
-      test: ["CMD", "curl", "service:8080/healthz" ]
+      test: ["CMD", "curl", "service:8080/health" ]
       interval: 5s
       retries: 10
     networks:
@@ -92,10 +87,11 @@ services:
     networks:
       - api
     healthcheck:
-      test: [ "CMD", "pg_isready", "-q", "-d", "${POSTGRES_DATABASE}", "-U", "${POSTGRES_USERNAME}" ]
-      interval: 5s
-      retries: 3
-      timeout: 5s
+      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
 
   prometheus:
     image: prom/prometheus:v2.40.4
@@ -103,10 +99,16 @@ services:
       - "9090:9090"
     volumes:
       - ./deployment/development/external/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    healthcheck:
+      test: [ "CMD", "wget", "http://prometheus:9090" ]
+      interval: 10s
+      timeout: 15s
+      retries: 10
+      start_period: 40s
 
   jaeger:
     hostname: jaeger
-    image: jaegertracing/all-in-one:1.52
+    image: jaegertracing/all-in-one
     environment:
       COLLECTOR_OTLP_ENABLED: true
     ports:
@@ -114,18 +116,16 @@ services:
       - "14269:14269" # healthcheck
       - "4318:4318" # accept OpenTelemetry Protocol (OTLP) over HTTP
     healthcheck:
-      test: ["CMD", "curl", "jaeger:14269/"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      test: [ "CMD", "curl", "-X", "GET", "jaeger:14269" ] # jaeger collector health check ping
+      interval: 1s
+      timeout: 3s
+      retries: 60
     networks:
       - api
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.1
     restart: unless-stopped
-    logging:
-      driver: none
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
     networks:
@@ -136,8 +136,6 @@ services:
     restart: unless-stopped
     depends_on:
       - zookeeper
-    logging:
-      driver: none
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
