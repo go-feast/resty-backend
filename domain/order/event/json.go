@@ -1,17 +1,17 @@
 package event
 
 import (
-	"github.com/go-feast/resty-backend/domain/shared/destination"
+	"github.com/go-feast/resty-backend/domain/shared/geo"
 	"github.com/google/uuid"
 )
 
 // JSONEventOrderCreated provides JSON representation of Order.
 type JSONEventOrderCreated struct {
-	OrderID      string                      `json:"order_id"`
-	CustomerID   string                      `json:"customer_id"`
-	RestaurantID string                      `json:"restaurant_id"`
-	Meals        []string                    `json:"meals"`
-	Destination  destination.JSONDestination `json:"destination"`
+	OrderID      string           `json:"order_id"`
+	CustomerID   string           `json:"customer_id"`
+	RestaurantID string           `json:"restaurant_id"`
+	Meals        []string         `json:"meals"`
+	Destination  geo.JSONLocation `json:"destination"`
 }
 
 type JSONOrderFinished struct {

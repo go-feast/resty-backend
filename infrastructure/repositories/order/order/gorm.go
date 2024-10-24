@@ -1,4 +1,4 @@
-package gorm
+package order
 
 import (
 	"context"
@@ -13,9 +13,9 @@ type OrderRepository struct {
 }
 
 func (r *OrderRepository) Delete(ctx context.Context, o *order.Order) error {
-	result := r.db.WithContext(ctx).Delete(o.ToDatabaseDTO())
+	result := r.db.WithContext(ctx).Delete(toDatabaseDTO(o))
 	if result.Error != nil {
-		return errors.Wrap(result.Error, "gorm repository: failed to delete order")
+		return errors.Wrap(result.Error, "order repository: failed to delete order")
 	}
 
 	return nil
@@ -28,23 +28,23 @@ func NewOrderRepository(
 }
 
 func (r *OrderRepository) Create(ctx context.Context, o *order.Order) error {
-	result := r.db.WithContext(ctx).Create(o.ToDatabaseDTO())
+	result := r.db.WithContext(ctx).Create(toDatabaseDTO(o))
 	if result.Error != nil {
-		return errors.Wrap(result.Error, "gorm repository: failed to create order")
+		return errors.Wrap(result.Error, "order repository: failed to create order")
 	}
 
 	return nil
 }
 
 func (r *OrderRepository) Get(ctx context.Context, id uuid.UUID) (*order.Order, error) {
-	o := &order.DatabaseOrderDTO{}
+	o := &DatabaseOrderDTO{}
 
 	result := r.db.WithContext(ctx).Find(o, "id = ?", id)
 	if result.Error != nil {
-		return nil, errors.Wrap(result.Error, "gorm repository: order get: failed to find order")
+		return nil, errors.Wrap(result.Error, "order repository: order get: failed to find order")
 	}
 
-	return o.ToOrder(), nil
+	return toOrder(o), nil
 }
 
 func (r *OrderRepository) Operate(ctx context.Context, id uuid.UUID, op order.Operation) error {
@@ -61,7 +61,7 @@ func (r *OrderRepository) Operate(ctx context.Context, id uuid.UUID, op order.Op
 			return errors.Wrap(err, "order operate: failed to operate order")
 		}
 
-		result := tx.Save(o.ToDatabaseDTO())
+		result := tx.Save(toDatabaseDTO(o))
 		if result.Error != nil {
 			return errors.Wrap(result.Error, "order operate: failed to save order")
 		}

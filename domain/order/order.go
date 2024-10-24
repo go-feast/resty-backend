@@ -3,7 +3,7 @@ package order
 
 import (
 	"github.com/go-feast/resty-backend/domain/order/event"
-	"github.com/go-feast/resty-backend/domain/shared/destination"
+	"github.com/go-feast/resty-backend/domain/shared/geo"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -42,10 +42,18 @@ type Order struct { //nolint:govet
 	transactionID uuid.UUID
 
 	// destination contains geo position of where Order should be delivered.
-	destination destination.Destination
+	destination geo.Location
 
 	// createdAt represents where Order has been created.
 	createdAt time.Time
+}
+
+func (o *Order) Destination() geo.Location {
+	return o.destination
+}
+
+func (o *Order) Meals() uuid.UUIDs {
+	return o.meals
 }
 
 func (o *Order) State() State             { return o.state }
@@ -110,7 +118,7 @@ func NewOrder(
 			errors.WithMessage(err, "cannot parse meals` id"))
 	}
 
-	deliverTo, err := destination.NewDestination(latitude, longitude)
+	deliverTo, err := geo.NewDestination(latitude, longitude)
 	if err != nil {
 		errs = multierror.Append(errs,
 			errors.WithMessage(err, "cannot resolve destination"))

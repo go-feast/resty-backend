@@ -1,7 +1,7 @@
 package event
 
 import (
-	"github.com/go-feast/resty-backend/domain/shared/destination"
+	"github.com/go-feast/resty-backend/domain/shared/geo"
 )
 
 // Type provides methods for converting Order for different marshaling strategies.
@@ -11,7 +11,7 @@ type Type struct {
 	RestaurantID  string
 	TransactionID string
 	Meals         []string
-	Destination   destination.Destination
+	Destination   geo.Location
 }
 
 // JSONEventOrderCreated converts Type to JSONEventOrderCreated.

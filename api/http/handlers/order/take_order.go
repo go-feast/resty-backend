@@ -5,24 +5,21 @@ import (
 	"github.com/go-feast/resty-backend/domain/order"
 	"github.com/go-feast/resty-backend/domain/shared/saver"
 	"github.com/go-feast/resty-backend/internal/http/httpstatus"
+	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"time"
 )
 
 func (h *Handler) TakeOrder() func(http.ResponseWriter, *http.Request) {
-	return takeOrder(h.tracer, h.saverService)
+	return takeOrder(h.tracer, h.saverService, h.restaurantRepository)
 }
 
-func takeOrder(tracer trace.Tracer, s saver.TransactionalOutbox[*order.Order]) func(w http.ResponseWriter, r *http.Request) {
+func takeOrder(tracer trace.Tracer, s saver.TransactionalOutbox[*order.Order], restaurantRepository order.RestaurantRepository) func(w http.ResponseWriter, r *http.Request) {
 	type TakeOrderRequest struct {
 		CustomerID   string   `json:"customer_id"`
 		RestaurantID string   `json:"restaurant_id"`
 		Meals        []string `json:"meals"`
-		Destination  struct {
-			Latitude  float64 `json:"latitude"`
-			Longitude float64 `json:"longitude"`
-		} `json:"destination"`
 	}
 
 	type TakeOrderResponse struct { //nolint:govet
@@ -43,12 +40,19 @@ func takeOrder(tracer trace.Tracer, s saver.TransactionalOutbox[*order.Order]) f
 			return
 		}
 
+		rid := uuid.MustParse(takeOrderRequest.RestaurantID)
+		restaurant, err := restaurantRepository.GetByID(ctx, rid)
+		if err != nil {
+			httpstatus.BadRequest(ctx, w, err)
+			return
+		}
+
 		o, err := order.NewOrder(
 			takeOrderRequest.RestaurantID,
 			takeOrderRequest.CustomerID,
 			takeOrderRequest.Meals,
-			takeOrderRequest.Destination.Latitude,
-			takeOrderRequest.Destination.Longitude,
+			restaurant.Location.Latitude(),
+			restaurant.Location.Longitude(),
 		)
 		if err != nil {
 			httpstatus.BadRequest(ctx, w, err)

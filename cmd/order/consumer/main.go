@@ -6,7 +6,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/go-feast/resty-backend/api/pubsub/handlers/order"
 	"github.com/go-feast/resty-backend/config"
-	repository "github.com/go-feast/resty-backend/infrastructure/repositories/order/gorm"
+	repository "github.com/go-feast/resty-backend/infrastructure/repositories/order/order"
 	"github.com/go-feast/resty-backend/internal/closer"
 	"github.com/go-feast/resty-backend/internal/consumer"
 	"github.com/go-feast/resty-backend/internal/logging"

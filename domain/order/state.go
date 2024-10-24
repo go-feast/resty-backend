@@ -49,3 +49,11 @@ var mapStates = map[string]State{ //nolint:unused
 	"order.delivered":        Delivered,
 	"order.closed":           Closed,
 }
+
+func GetState(name string) (*State, error) {
+	if state, ok := mapStates[name]; ok {
+		return &state, nil
+	}
+
+	return nil, ErrInvalidState
+}

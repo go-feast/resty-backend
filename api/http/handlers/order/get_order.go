@@ -12,10 +12,10 @@ import (
 )
 
 func (h *Handler) GetOrder() func(w http.ResponseWriter, r *http.Request) {
-	return getOrder(h.repository)
+	return getOrder(h.orderRepository)
 }
 
-func getOrder(repository order.Repository) func(w http.ResponseWriter, r *http.Request) {
+func getOrder(repository order.OrderRepository) func(w http.ResponseWriter, r *http.Request) {
 	type GetOrderResponse struct { //nolint:govet
 		ID            uuid.UUID `json:"id"`
 		State         string    `json:"state"`

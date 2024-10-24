@@ -7,9 +7,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	httporder "github.com/go-feast/resty-backend/api/http/handlers/order"
 	"github.com/go-feast/resty-backend/config"
-	"github.com/go-feast/resty-backend/domain/order"
 	outboxorder "github.com/go-feast/resty-backend/infrastructure/outbox/order"
-	gormorder "github.com/go-feast/resty-backend/infrastructure/repositories/order/gorm"
+	gormorder "github.com/go-feast/resty-backend/infrastructure/repositories/order/order"
+	gormrestaurant "github.com/go-feast/resty-backend/infrastructure/repositories/order/restaurant"
 	"github.com/go-feast/resty-backend/internal/closer"
 	"github.com/go-feast/resty-backend/internal/logging"
 	"github.com/go-feast/resty-backend/internal/pubsub"
@@ -60,7 +60,8 @@ func main() {
 		log.Panic().Err(err).Msg("failed to connect to database")
 	}
 
-	order.InitializeOrderScheme(db)
+	gormorder.InitializeOrderScheme(db)
+	gormrestaurant.InitializeRestaurantModel(db)
 
 	publisher, err := pubsub.NewSQLPublisher(db, logging.NewWatermillLogger())
 	if err != nil {
@@ -76,9 +77,9 @@ func main() {
 
 func RegisterOrderServiceRoutes(tracer trace.Tracer, db *gorm.DB, sqlPub message.Publisher) func(r chi.Router) {
 	repository := gormorder.NewOrderRepository(db)
+	restaurantRepository := gormrestaurant.NewGormRestaurantRepository(db)
 	outbox := outboxorder.NewOutbox(sqlPub, repository, json.Marshal)
-	handler := httporder.NewHandler(
-		tracer, repository, outbox)
+	handler := httporder.NewHandler(tracer, repository, outbox, restaurantRepository)
 
 	return func(r chi.Router) {
 		r.Get("/health", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200) })

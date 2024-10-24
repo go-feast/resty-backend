@@ -14,17 +14,20 @@ type Handler struct {
 	// metrics
 
 	// repositories eg.
-	repository order.Repository
+	orderRepository      order.OrderRepository
+	restaurantRepository order.RestaurantRepository
 }
 
 func NewHandler(
 	tracer trace.Tracer,
-	repository order.Repository,
+	repository order.OrderRepository,
 	saverService saver.TransactionalOutbox[*order.Order],
+	restaurantRepository order.RestaurantRepository,
 ) *Handler {
 	return &Handler{
-		tracer:       tracer,
-		repository:   repository,
-		saverService: saverService,
+		tracer:               tracer,
+		orderRepository:      repository,
+		saverService:         saverService,
+		restaurantRepository: restaurantRepository,
 	}
 }

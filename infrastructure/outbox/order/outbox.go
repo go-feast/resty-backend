@@ -12,12 +12,12 @@ import (
 type Outbox struct {
 	publisher  message.Publisher
 	marshaller func(any) ([]byte, error)
-	repository order.Repository
+	repository order.OrderRepository
 }
 
 func NewOutbox(
 	publisher message.Publisher,
-	repository order.Repository,
+	repository order.OrderRepository,
 	marshaller func(any) ([]byte, error),
 ) *Outbox {
 	return &Outbox{

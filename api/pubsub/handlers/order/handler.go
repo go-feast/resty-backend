@@ -8,13 +8,13 @@ import (
 type Handler struct {
 	unmarshaler func([]byte, any) error
 	tracer      trace.Tracer
-	repository  order.Repository
+	repository  order.OrderRepository
 }
 
 func NewHandler(
 	unmarshaler func([]byte, any) error,
 	tracer trace.Tracer,
-	repository order.Repository,
+	repository order.OrderRepository,
 ) *Handler {
 	return &Handler{
 		unmarshaler: unmarshaler,

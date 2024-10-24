@@ -11,17 +11,19 @@ x-service-volume:  &service-volume
 
 
 services:
-  service-consumer:
+  order-consumer:
     depends_on:
       - kafka
       - jaeger
       - prometheus
-      - postgres
+      - postgres-order
     env_file:
       - dev.env
     environment:
-      METRICS_HOST: service-consumer
+      POSTGRES_HOST: postgres-order:5432
+      METRICS_HOST: order-consumer
       METRICS_PORT: 8083
+      POSTGRES_DB: order
     build:
       dockerfile: Dockerfile
       context: .
@@ -34,24 +36,26 @@ services:
     ports:
       - "8083:8083" # metric service port. Make sure u change it in deployment/development/external/prometheus.yml
     healthcheck:
-      test: ["CMD", "curl", "service-consumer:8083/healthz"]
+      test: ["CMD", "curl", "http://order-consumer:8083/healthz"]
       retries: 10
       interval: 5s
     networks:
       - api
 
-  service:
+  order-server:
     depends_on:
       - kafka
       - jaeger
       - prometheus
-      - postgres
+      - postgres-order
     env_file:
       - dev.env
     environment:
-      SERVER_HOST: service
+      POSTGRES_HOST: postgres-order:5432
+      POSTGRES_DB: order
+      SERVER_HOST: order-server
       SERVER_PORT: 8080
-      METRICS_HOST: service
+      METRICS_HOST: order-server
       METRICS_PORT: 8081
       SERVER_WRITETIMEOUT: 10s
       SERVER_READTIMEOUT: 5s
@@ -70,18 +74,76 @@ services:
       - "8080:8080" # service port
       - "8081:8081" # metric service port
     healthcheck:
-      test: ["CMD", "curl", "service:8080/health" ]
+      test: ["CMD", "curl", "http://order-server:8080/health" ]
       interval: 5s
       retries: 10
     networks:
       - api
 
-  postgres:
+  postgres-order:
     image: postgres:15
     ports:
       - "5432:5432"
     env_file:
       - dev.env
+    environment:
+      POSTGRES_DB: order
+    #    volumes:
+    #      - 'pgsql:/var/lib/postgresql/data'
+    networks:
+      - api
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "db_prod" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+
+  restaurant-server:
+    depends_on:
+      - jaeger
+      - prometheus
+      - postgres-restaurant
+    env_file:
+      - dev.env
+    environment:
+      POSTGRES_HOST: postgres-restaurant:5433
+      SERVER_HOST: restaurant-server
+      SERVER_PORT: 8080
+      METRICS_HOST: restaurant-server
+      METRICS_PORT: 8081
+      SERVER_WRITETIMEOUT: 10s
+      SERVER_READTIMEOUT: 5s
+      SERVER_IDLETIMEOUT: 5s
+      POSTGRES_DB: restaurant
+    build:
+      dockerfile: Dockerfile
+      context: .
+      target: binary
+      args:
+        SERVICE_PORT: 8090
+        METRIC_PORT: 8091
+        BUILD_TARGET: server
+        BUILD_PROJECT: restaurant
+    restart: on-failure
+    ports:
+      - "8090:8090" # service port
+      - "8091:8091" # metric service port
+    healthcheck:
+      test: [ "CMD", "curl", "restaurant-server:8090/health" ]
+      interval: 5s
+      retries: 10
+    networks:
+      - api
+
+  postgres-restaurant:
+    image: postgres:15
+    ports:
+      - "5433:5432"
+    env_file:
+      - dev.env
+    environment:
+      POSTGRES_DB: restaurant
     #    volumes:
     #      - 'pgsql:/var/lib/postgresql/data'
     networks:
