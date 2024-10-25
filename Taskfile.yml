@@ -5,7 +5,7 @@ version: '3'
 vars:
   OK_COLOR: '\033[32;01m'
   NO_COLOR: '\033[0m'
-  LOCAL_DOCKER_COMPOSE: compose.yml
+  LOCAL_DOCKER_COMPOSE: compose.yaml
   INTEGRATION_DOCKER_COMPOSE: ./testing/integration/docker-compose.yml
 
 tasks:

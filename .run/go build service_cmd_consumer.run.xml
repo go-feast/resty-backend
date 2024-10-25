@@ -1,6 +1,5 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="go build service/cmd/consumer" type="GoApplicationRunConfiguration" factoryName="Go Application">
-    <module name="order-service" />
     <working_directory value="$PROJECT_DIR$" />
     <envs>
       <env name="DB_URL" value="localhost:5432" />
