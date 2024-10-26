@@ -29,6 +29,8 @@ func routes(e *gin.Engine) {
 	v1 := e.Group("/api/v1")
 
 	{
-		v1.POST("/orders", handler.TakeOrder())
+		orders := v1.Group("orders")
+		orders.POST("/", handler.TakeOrder())
+		orders.GET("/:id", handler.GetOrder())
 	}
 }

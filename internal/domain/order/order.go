@@ -10,6 +10,7 @@ import (
 
 type OrderRepository interface {
 	Create(ctx context.Context, order *Order) error
+	GetOrder(ctx context.Context, id uuid.UUID) (*Order, error)
 }
 
 type Order struct {
