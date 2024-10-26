@@ -23,6 +23,8 @@ func main() {
 	engine.Use(gin.Recovery())
 	log.Printf("Starting %s%s on addr: %s", serviceName, version, addr)
 
+	routes(engine)
+
 	serv := http.Server{
 		Addr:    addr,
 		Handler: engine.Handler(),

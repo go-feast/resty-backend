@@ -36,7 +36,7 @@ ARG TARGETPRJ
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=bind,target=. \
     CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/server \
-    cmd/$TARGETPRJ/$TARGETSVC/main.go
+    cmd/$TARGETPRJ/$TARGETSVC/*.go
 
 ################################################################################
 # Create a new stage for running the application that contains the minimal
@@ -87,3 +87,24 @@ HEALTHCHECK --interval=5s --timeout=3s --start-period=3s --retries=5 CMD curl -f
 
 # What the container should run when it is started.
 ENTRYPOINT [ "/bin/server" ]
+
+FROM golang:${GO_VERSION}-alpine AS dev
+
+RUN --mount=type=cache,target=/var/cache/apt \
+    apk update && \
+    apk add --no-cache git &&\
+    apk add --no-cache curl
+
+ENV GOBIN=/go/bin
+ENV PATH="/go/bin:${PATH}"
+
+RUN go install github.com/go-task/task/v3/cmd/task@latest && \
+    go install github.com/githubnemo/CompileDaemon@latest
+
+WORKDIR /github.com/go-feast/resty-backend
+
+COPY go.mod go.sum ./
+
+RUN go mod tidy && go mod verify && go mod download -x
+
+COPY . .

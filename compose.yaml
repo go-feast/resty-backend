@@ -5,6 +5,11 @@
 volumes:
   order-db-data:
 
+x-app-volume: &app-volume
+  type: bind
+  source: ./
+  target: /github.com/go-feast/resty-backend
+
 # Here the instructions define your application as a service called "server".
 # This service is built from the Dockerfile in the current directory.
 # You can add other services your application may depend on here, such as a
@@ -14,16 +19,27 @@ services:
   order-server:
     build:
       context: .
-      target: final
+      target: dev
       dockerfile: Dockerfile
-      args:
-        TARGETSVC: server
-        TARGETPRJ: order
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=order build-api-server"
+      - "-command=/bin/server"
     environment:
       ADDR: order-server:8080
-      DB: postgres-order:5432
+      DB: postgres://postgres:secret@postgres-order:5432/order
     ports:
       - "8080:8080"
+    depends_on:
+      postgres-order:
+        condition: service_healthy
 
   postgres-order:
     image: postgres:15

@@ -23,14 +23,6 @@ func DBConn() string {
 	return envProvider.Getenv("DB")
 }
 
-func DBUser() string {
-	return "postgres"
-}
-
-func DBPassword() string {
-	return "secret"
-}
-
 func Addr() string {
 	return envProvider.Getenv("ADDR")
 }
