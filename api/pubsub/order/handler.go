@@ -1,24 +1,21 @@
 package order
 
-import (
-	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/go-feast/resty-backend/internal/domain/order"
-)
+import "github.com/go-feast/resty-backend/internal/domain/order"
 
 type Handler struct {
 	orderRepository order.OrderRepository
-	publisher       message.Publisher
+	Unmarshaler     func([]byte, interface{}) error
 	Marshaler       func(interface{}) ([]byte, error)
 }
 
 func NewHandler(
 	orderRepository order.OrderRepository,
-	publisher message.Publisher,
+	unmarshaler func([]byte, interface{}) error,
 	marshaler func(interface{}) ([]byte, error),
 ) *Handler {
 	return &Handler{
 		orderRepository: orderRepository,
-		publisher:       publisher,
+		Unmarshaler:     unmarshaler,
 		Marshaler:       marshaler,
 	}
 }

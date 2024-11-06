@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-feast/resty-backend/internal/domain/shared/geo"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -11,6 +12,7 @@ import (
 type OrderRepository interface {
 	Create(ctx context.Context, order *Order) error
 	GetOrder(ctx context.Context, id uuid.UUID) (*Order, error)
+	Transact(ctx context.Context, id uuid.UUID, action func(o *Order) error) (*Order, error)
 }
 
 type Order struct {
@@ -18,6 +20,7 @@ type Order struct {
 	CourierID        uuid.UUID
 	RestaurantID     uuid.UUID
 	CustomerID       uuid.UUID
+	PaymentID        uuid.UUID
 	DestinationLat   float64
 	DestinationLng   float64
 	Meals            []Meal `gorm:"foreignKey:OrderID"`
@@ -29,6 +32,94 @@ type Order struct {
 	CreatedAt        time.Time
 	CancelledAt      time.Time
 	DeletedAt        time.Time
+}
+
+func (o *Order) SetOrderStatus(status OrderStatus) error {
+	if status == Created {
+		if o.OrderStatus != Created {
+			return fmt.Errorf("order satus: %s", o.OrderStatus)
+		}
+	}
+	if status == Canceled {
+		if o.OrderStatus != Completed {
+			o.OrderStatus = Canceled
+		} else {
+			return fmt.Errorf("order satus: %s", o.OrderStatus)
+		}
+	}
+	if status == Completed {
+		o.OrderStatus = Completed
+	}
+
+	return nil
+}
+
+func (o *Order) SetPaymentStatus(status TransactionStatus) error {
+	if status == PaymentWaiting {
+		if o.PaymentStatus != PaymentWaiting {
+			return fmt.Errorf("payment satus: %s", o.PaymentStatus)
+		}
+	}
+	if status == PaymentCanceled {
+		if o.PaymentStatus != PaymentPaid {
+			o.PaymentStatus = PaymentCanceled
+		} else {
+			return fmt.Errorf("payment satus: %s", o.PaymentStatus)
+		}
+	}
+	if status == PaymentPaid {
+		if o.PaymentStatus != PaymentCanceled {
+			o.PaymentStatus = PaymentPaid
+		} else {
+			return fmt.Errorf("payment satus: %s", o.PaymentStatus)
+		}
+	}
+
+	return nil
+}
+
+func (o *Order) SetRestaurantStatus(status RestaurantStatus) error {
+	if status == RestaurantReceivedOrder {
+		if o.RestaurantStatus != RestaurantReceivedOrder {
+			return fmt.Errorf("restaurant satus: %s", o.RestaurantStatus)
+		}
+	}
+	if status == RestaurantPreparingOrder {
+		if o.RestaurantStatus != RestaurantPreparedOrder {
+			o.RestaurantStatus = RestaurantPreparingOrder
+		} else {
+			return fmt.Errorf("restaurant satus: %s", o.RestaurantStatus)
+		}
+	}
+	if status == RestaurantPreparedOrder {
+		if o.RestaurantStatus != RestaurantPreparedOrder {
+			o.RestaurantStatus = RestaurantPreparedOrder
+		}
+	}
+
+	return nil
+}
+
+func (o *Order) SetCourierStatus(status CourierStatus) error {
+	if status == CourierTookOrder {
+		if o.CourierStatus != CourierTookOrder {
+			return fmt.Errorf("courier satus: %s", o.CourierStatus)
+		}
+	}
+	if status == CourierDelivering {
+		if o.CourierStatus != CourierDelivered {
+			o.CourierStatus = CourierDelivering
+		} else {
+			return fmt.Errorf("courier satus: %s", o.CourierStatus)
+		}
+	}
+	if status == CourierDelivered {
+		if o.CourierStatus != CourierDelivered {
+			o.CourierStatus = CourierDelivered
+		}
+	}
+
+	return nil
 }
 
 type Destination struct {
@@ -82,10 +173,15 @@ type (
 	CourierStatus     string
 )
 
+func (v TransactionStatus) String() string { return string(v) }
+func (v RestaurantStatus) String() string  { return string(v) }
+func (v OrderStatus) String() string       { return string(v) }
+func (v CourierStatus) String() string     { return string(v) }
+
 const (
-	Created  OrderStatus = "order.created"
-	Canceled OrderStatus = "order.cancelled"
-	Closed   OrderStatus = "order.closed"
+	Created   OrderStatus = "order.created"
+	Canceled  OrderStatus = "order.canceled"
+	Completed OrderStatus = "order.completed"
 )
 
 const (

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	apiorder "github.com/go-feast/resty-backend/api/http/order"
+	"github.com/go-feast/resty-backend/infrastructure/pubsub"
 	gormorder "github.com/go-feast/resty-backend/infrastructure/repositories/order"
 	"github.com/go-feast/resty-backend/internal/config"
 	"gorm.io/driver/postgres"
@@ -22,7 +24,7 @@ func routes(e *gin.Engine) {
 	gormorder.InitializerOrderOrDie(db)
 
 	orderRepository := gormorder.NewGormOrderRepository(db)
-	handler := apiorder.NewHandler(orderRepository)
+	handler := apiorder.NewHandler(orderRepository, &pubsub.NopPublisher{}, json.Marshal)
 
 	e.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
 
@@ -32,5 +34,7 @@ func routes(e *gin.Engine) {
 		orders := v1.Group("orders")
 		orders.POST("/", handler.TakeOrder())
 		orders.GET("/:id", handler.GetOrder())
+		orders.POST("/:id/cancel", handler.CancelOrder())
+		orders.POST("/:id/complete", handler.CloseOrder())
 	}
 }

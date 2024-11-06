@@ -5,15 +5,12 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-feast/resty-backend/internal/domain/order"
 	"github.com/go-feast/resty-backend/internal/domain/shared/geo"
+	"github.com/go-feast/resty-backend/internal/message"
 	"github.com/google/uuid"
 	"net/http"
 )
 
 func (h *Handler) TakeOrder() gin.HandlerFunc {
-	return takeOrder(h.orderRepository)
-}
-
-func takeOrder(orderRepository order.OrderRepository) gin.HandlerFunc {
 	type Request struct {
 		CustomerID   uuid.UUID
 		RestaurantID uuid.UUID
@@ -31,7 +28,14 @@ func takeOrder(orderRepository order.OrderRepository) gin.HandlerFunc {
 
 		o := order.NewOrder(r.CustomerID, r.RestaurantID, r.Meals, r.Destination)
 
-		err := orderRepository.Create(c, o)
+		err := h.orderRepository.Create(c, o)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		msg := message.NewMessage(message.Event{"order_id": o.ID}, h.Marshaler)
+		err = h.publisher.Publish(order.Created.String(), msg)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
