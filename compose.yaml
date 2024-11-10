@@ -1,0 +1,310 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+volumes:
+  order-db-data:
+  restaurant-db-data:
+  payment-db-data:
+  courier-db-data:
+
+x-app-volume: &app-volume
+  type: bind
+  source: ./
+  target: /github.com/go-feast/resty-backend
+
+# Here the instructions define your application as a service called "server".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.1
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: "2181"
+      ZOOKEEPER_TICK_TIME: "2000"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.1
+    depends_on:
+      - zookeeper
+    env_file:
+      - dev/docker-kafka.env
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENERS: EXTERNAL://0.0.0.0:9091,INTERNAL://0.0.0.0:29091
+      KAFKA_ADVERTISED_LISTENERS: EXTERNAL://kafka:9091,INTERNAL://kafka:29091
+    ports:
+      - "9091:9091"
+    restart: unless-stopped
+
+  order-server:
+    build:
+      context: .
+      target: dev
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=order build-api-server"
+      - "-command=/bin/server"
+    environment:
+      KAFKA: kafka:9091
+      ADDR: order-server:8080
+      DB: postgres://postgres:secret@postgres-order:5432/order
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+
+  order-consumer:
+    build:
+      context: .
+      target: dev
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=order build-api-consumer"
+      - "-command=/bin/consumer"
+    environment:
+      KAFKA: kafka:9091
+      DB: postgres://postgres:secret@postgres-order:5432/order
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+
+  postgres-order:
+    image: postgres:15
+    restart: always
+    user: postgres
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=order
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  restaurant-server:
+    build:
+      context: .
+      target: dev
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=restaurant build-api-server"
+      - "-command=/bin/server"
+    environment:
+      KAFKA: kafka:9091
+      ADDR: restaurant-server:8080
+      DB: postgres://postgres:secret@postgres-restaurant:5432/restaurant
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres-restaurant:
+        condition: service_healthy
+
+  restaurant-consumer:
+    build:
+      context: .
+      target: dev
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=restaurant build-api-consumer"
+      - "-command=/bin/consumer"
+    environment:
+      KAFKA: kafka:9091
+      DB: postgres://postgres:secret@postgres-restaurant:5432/restaurant
+    depends_on:
+      postgres-restaurant:
+        condition: service_healthy
+
+  postgres-restaurant:
+    image: postgres:15
+    restart: always
+    user: postgres
+    volumes:
+      - restaurant-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=restaurant
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payment-server:
+    build:
+      context: .
+      target: dev
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=payment build-api-server"
+      - "-command=/bin/server"
+    environment:
+      KAFKA: kafka:9091
+      ADDR: payment-server:8080
+      DB: postgres://postgres:secret@postgres-payment:5432/payment
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+
+  payment-consumer:
+    build:
+      context: .
+      target: dev
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=payment build-api-consumer"
+      - "-command=/bin/consumer"
+    environment:
+      KAFKA: kafka:9091
+      DB: postgres://postgres:secret@postgres-payment:5432/payment
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+
+  postgres-payment:
+    image: postgres:15
+    restart: always
+    user: postgres
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=payment
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  courier-server:
+    build:
+      context: .
+      target: dev
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=courier build-api-server"
+      - "-command=/bin/server"
+    environment:
+      KAFKA: kafka:9091
+      ADDR: courier-server:8080
+      DB: postgres://postgres:secret@postgres-courier:5432/courier
+    ports:
+      - "8083:8080"
+    depends_on:
+      postgres-courier:
+        condition: service_healthy
+
+  courier-consumer:
+    build:
+      context: .
+      target: dev
+      dockerfile: Dockerfile
+    restart: on-failure
+    volumes:
+      - <<: *app-volume
+    command:
+      - "/go/bin/CompileDaemon"
+      - "-log-prefix=false"
+      - "-graceful-timeout=10"
+      - "-graceful-kill=true"
+      - "-exclude-dir=.git"
+      - "-build=task PROJECT=courier build-api-consumer"
+      - "-command=/bin/consumer"
+    environment:
+      KAFKA: kafka:9091
+      DB: postgres://postgres:secret@postgres-courier:5432/courier
+    depends_on:
+      postgres-courier:
+        condition: service_healthy
+
+  postgres-courier:
+    image: postgres:15
+    restart: always
+    user: postgres
+    volumes:
+      - courier-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=courier
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
