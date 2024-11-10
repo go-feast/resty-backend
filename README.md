@@ -1,4 +1,0 @@
-
-Courier consumer listen on restaurant.order.preparing and didn't create order:
-/github.com/go-feast/resty-backend/infrastructure/repositories/courier/courier/gorm.go:33 ERROR: insert or update on table "orders" violates foreign key constraint "fk_couriers_assigned_orders" (SQLSTATE 23503)
-2024-11-09T22:32:02.601817046Z [2.169ms] [rows:0] INSERT INTO "orders" ("id","courier_id","restaurant_location_latitude","restaurant_location_longitude","status","destination_location_latitude","destination_location_longitude","created_at") VALUES ('cefe49f5-cf1a-490e-bc7a-730cecb4af6e','00000000-0000-0000-0000-000000000000',0,0,'',0,0,'2024-11-09 22:32:02.6')
