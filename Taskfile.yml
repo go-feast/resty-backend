@@ -45,8 +45,10 @@ tasks:
 
   build-api-consumer:
     desc: Build service
+    envs:
+      PROJECT: none
     cmds:
-      - go build -buildvcs=false -ldflags="-s -w" -o bin/consumer ./cmd/consumer/main.go
+      - go build -buildvcs=false -ldflags="-s -w" -o /bin/consumer ./cmd/{{.PROJECT}}/consumer/*.go
     env:
       CGO_ENABLED: 0
       GOOS: linux

@@ -22,6 +22,13 @@ func main() {
 
 	routes(router)
 
+	go func() {
+		<-ctx.Done()
+		if err = router.Close(); err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
 	if err = router.Run(ctx); err != nil {
 		log.Fatal(err)
 	}

@@ -24,7 +24,6 @@ type Order struct {
 	DestinationLat   float64
 	DestinationLng   float64
 	Meals            []Meal `gorm:"foreignKey:OrderID"`
-	TransactionID    uuid.UUID
 	RestaurantStatus RestaurantStatus
 	PaymentStatus    TransactionStatus
 	CourierStatus    CourierStatus
@@ -35,6 +34,10 @@ type Order struct {
 }
 
 func (o *Order) SetOrderStatus(status OrderStatus) error {
+	if o.OrderStatus == "" {
+		o.OrderStatus = status
+	}
+
 	if status == Created {
 		if o.OrderStatus != Created {
 			return fmt.Errorf("order satus: %s", o.OrderStatus)
@@ -56,8 +59,10 @@ func (o *Order) SetOrderStatus(status OrderStatus) error {
 
 func (o *Order) SetPaymentStatus(status TransactionStatus) error {
 	if status == PaymentWaiting {
-		if o.PaymentStatus != PaymentWaiting {
+		if o.PaymentStatus != PaymentWaiting && o.PaymentStatus != "" {
 			return fmt.Errorf("payment satus: %s", o.PaymentStatus)
+		} else {
+			o.PaymentStatus = PaymentWaiting
 		}
 	}
 	if status == PaymentCanceled {
@@ -80,8 +85,10 @@ func (o *Order) SetPaymentStatus(status TransactionStatus) error {
 
 func (o *Order) SetRestaurantStatus(status RestaurantStatus) error {
 	if status == RestaurantReceivedOrder {
-		if o.RestaurantStatus != RestaurantReceivedOrder {
+		if o.RestaurantStatus != RestaurantReceivedOrder && o.RestaurantStatus != "" {
 			return fmt.Errorf("restaurant satus: %s", o.RestaurantStatus)
+		} else {
+			o.RestaurantStatus = RestaurantReceivedOrder
 		}
 	}
 	if status == RestaurantPreparingOrder {
@@ -101,9 +108,23 @@ func (o *Order) SetRestaurantStatus(status RestaurantStatus) error {
 }
 
 func (o *Order) SetCourierStatus(status CourierStatus) error {
-	if status == CourierTookOrder {
-		if o.CourierStatus != CourierTookOrder {
+	if o.CourierStatus == "" {
+		o.CourierStatus = status
+	}
+
+	if status == CourierAssigned {
+		if o.CourierStatus != CourierAssigned && o.CourierStatus != "" {
 			return fmt.Errorf("courier satus: %s", o.CourierStatus)
+		} else {
+			o.CourierStatus = CourierAssigned
+		}
+	}
+
+	if status == CourierTookOrder {
+		if o.CourierStatus != CourierTookOrder && o.CourierStatus != "" {
+			return fmt.Errorf("courier satus: %s", o.CourierStatus)
+		} else {
+			o.CourierStatus = CourierTookOrder
 		}
 	}
 	if status == CourierDelivering {
@@ -155,7 +176,7 @@ func NewOrder(customerID uuid.UUID, restaurantID uuid.UUID, meals uuid.UUIDs, de
 		DestinationLat:   destination.Latitude,
 		DestinationLng:   destination.Longitude,
 		Meals:            mapMeals(id, meals),
-		TransactionID:    uuid.Nil,
+		PaymentID:        uuid.Nil,
 		RestaurantStatus: "",
 		PaymentStatus:    "",
 		CourierStatus:    "",
@@ -185,9 +206,10 @@ const (
 )
 
 const (
-	CourierTookOrder  = "courier.order.taken"
-	CourierDelivering = "courier.delivering"
-	CourierDelivered  = "courier.delivered"
+	CourierAssigned   CourierStatus = "courier.order.assigned"
+	CourierTookOrder  CourierStatus = "courier.order.taken"
+	CourierDelivering CourierStatus = "courier.delivering"
+	CourierDelivered  CourierStatus = "courier.delivered"
 )
 
 const (

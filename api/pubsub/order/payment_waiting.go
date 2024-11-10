@@ -4,6 +4,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/go-feast/resty-backend/internal/domain/order"
 	"github.com/google/uuid"
+	"log"
 )
 
 func (h *Handler) PaymentWaiting() message.NoPublishHandlerFunc {
@@ -18,10 +19,11 @@ func (h *Handler) PaymentWaiting() message.NoPublishHandlerFunc {
 			return err
 		}
 
+		log.Printf("[payment.waiting] Received event: order_id:%s, payment_id:%s", event.OrderID, event.PaymentTransactionID)
+
 		_, err := h.orderRepository.Transact(msg.Context(), event.OrderID, func(o *order.Order) error {
 			o.PaymentID = event.PaymentTransactionID
-			o.PaymentStatus = order.PaymentWaiting
-			return nil
+			return o.SetPaymentStatus(order.PaymentWaiting)
 		})
 		if err != nil {
 			return err

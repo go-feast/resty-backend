@@ -7,7 +7,7 @@ import (
 
 func (h *Handler) OrderCreated() message.NoPublishHandlerFunc {
 	type Order struct {
-		ID string `json:"id"`
+		ID string `json:"order_id"`
 	}
 	return func(msg *message.Message) error {
 		var order Order

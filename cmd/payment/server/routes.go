@@ -23,7 +23,7 @@ func routes(r *gin.Engine) {
 	gormpay.InitializePaymentOrDie(db)
 
 	payRepository := gormpay.NewGormPaymentRepository(db)
-	handler := httppay.NewHandler(payRepository, &pubsub.NopPublisher{}, json.Unmarshal, json.Marshal)
+	handler := httppay.NewHandler(payRepository, pubsub.NewKafkaPub(), json.Unmarshal, json.Marshal)
 
 	r.GET("/health", func(c *gin.Context) { c.Status(200) })
 

@@ -3,6 +3,7 @@ package restaurant
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-feast/resty-backend/internal/domain/restaurant"
+	"github.com/go-feast/resty-backend/internal/message"
 	"github.com/google/uuid"
 	"net/http"
 )
@@ -23,6 +24,13 @@ func (h *Handler) SetPreparingOrder() gin.HandlerFunc {
 		o, err := h.orderRepository.Transact(c, uuid.MustParse(r.OrderID), func(order *restaurant.Order) error {
 			return order.SetRestaurantStatus(restaurant.PreparingOrder)
 		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		msg := message.NewMessage(message.Event{"order_id": o.ID}, h.Marshaler)
+		err = h.publisher.Publish(restaurant.PreparingOrder.String(), msg)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

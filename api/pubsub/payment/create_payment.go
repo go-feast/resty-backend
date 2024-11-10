@@ -5,6 +5,7 @@ import (
 	"github.com/go-feast/resty-backend/internal/domain/payment"
 	internalmsg "github.com/go-feast/resty-backend/internal/message"
 	"github.com/google/uuid"
+	"log"
 )
 
 // should listen on order.created and post to payment.waiting
@@ -20,12 +21,13 @@ func (h *Handler) CreatePayment() message.HandlerFunc {
 		}
 
 		p := payment.NewPayment(event.OrderID)
+		log.Printf("Received order: %s, created payment: %s", event.OrderID, p.ID)
 
 		if err := h.paymentRepository.Create(msg.Context(), p); err != nil {
 			return nil, err
 		}
 
-		msg = internalmsg.NewMessage(internalmsg.Event{"order_id": event.OrderID}, h.Marshaler)
+		msg = internalmsg.NewMessage(internalmsg.Event{"order_id": event.OrderID, "payment_id": p.ID}, h.Marshaler)
 		return []*message.Message{msg}, nil
 	}
 }

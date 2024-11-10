@@ -18,8 +18,7 @@ func (h *Handler) OrderClosed() message.NoPublishHandlerFunc {
 		}
 
 		_, err := h.orderRepository.Transact(msg.Context(), event.OrderID, func(o *order.Order) error {
-			o.OrderStatus = order.Completed
-			return nil
+			return o.SetOrderStatus(order.Completed)
 		})
 		if err != nil {
 			return err

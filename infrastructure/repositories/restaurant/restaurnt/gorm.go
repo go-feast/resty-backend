@@ -38,27 +38,29 @@ func withTx(db *gorm.DB) *GormRestaurantRepository {
 }
 
 func (g *GormRestaurantRepository) Transact(ctx context.Context, id uuid.UUID, action func(restaurant *restaurant.Restaurant) error) (*restaurant.Restaurant, error) {
-	tx := g.db.WithContext(ctx).Begin()
-	var err error
-	defer func() {
+	var res *restaurant.Restaurant
+	err := g.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		r, err := withTx(tx).GetRestaurant(ctx, id)
 		if err != nil {
-			tx.Rollback()
-			return
+			return err
 		}
-		tx.Commit()
-	}()
 
-	r, err := withTx(tx).GetRestaurant(ctx, id)
+		err = action(r)
+		if err != nil {
+			return err
+		}
+
+		tx.Save(r)
+
+		res = r
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	err = action(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
+	return res, nil
 }
 
 func (g *GormRestaurantRepository) CreateRestaurant(ctx context.Context, restaurant *restaurant.Restaurant) error {

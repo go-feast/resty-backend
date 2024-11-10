@@ -24,7 +24,7 @@ func routes(e *gin.Engine) {
 	gormorder.InitializerOrderOrDie(db)
 
 	orderRepository := gormorder.NewGormOrderRepository(db)
-	handler := apiorder.NewHandler(orderRepository, &pubsub.NopPublisher{}, json.Marshal)
+	handler := apiorder.NewHandler(orderRepository, pubsub.NewKafkaPub(), json.Marshal)
 
 	e.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
 

@@ -46,6 +46,9 @@ func (g *GormRepository) Transact(ctx context.Context, id uuid.UUID, action func
 			return err
 		}
 
+		tx.Model(&restaurant.Order{}).Where("id = ?", id).Updates(order)
+
+		o = order
 		return nil
 	})
 	if err != nil {

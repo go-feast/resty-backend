@@ -18,8 +18,7 @@ func (h *Handler) PaymentPaid() message.NoPublishHandlerFunc {
 		}
 
 		_, err := h.orderRepository.Transact(msg.Context(), event.OrderID, func(o *order.Order) error {
-			o.PaymentStatus = order.PaymentPaid
-			return nil
+			return o.SetPaymentStatus(order.PaymentPaid)
 		})
 		if err != nil {
 			return err

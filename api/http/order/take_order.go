@@ -12,10 +12,10 @@ import (
 
 func (h *Handler) TakeOrder() gin.HandlerFunc {
 	type Request struct {
-		CustomerID   uuid.UUID
-		RestaurantID uuid.UUID
-		Meals        uuid.UUIDs
-		Destination  geo.Location
+		CustomerID   uuid.UUID    `json:"customer_id"`
+		RestaurantID uuid.UUID    `json:"restaurant_id"`
+		Meals        uuid.UUIDs   `json:"meals"`
+		Destination  geo.Location `json:"destination"`
 	}
 
 	return func(c *gin.Context) {

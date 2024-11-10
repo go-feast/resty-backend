@@ -18,8 +18,7 @@ func (h *Handler) RestaurantPreparingOrder() message.NoPublishHandlerFunc {
 		}
 
 		_, err := h.orderRepository.Transact(msg.Context(), event.OrderID, func(o *order.Order) error {
-			o.RestaurantStatus = order.RestaurantPreparingOrder
-			return nil
+			return o.SetRestaurantStatus(order.RestaurantPreparingOrder)
 		})
 		if err != nil {
 			return err

@@ -1,6 +1,6 @@
 package main
 
 const (
-	serviceName = "payment.consumer"
+	serviceName = "restaurant.consumer"
 	version     = "v0.1.0"
 )

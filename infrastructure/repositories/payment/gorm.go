@@ -50,6 +50,8 @@ func (g *GormPaymentRepository) Transact(ctx context.Context, id uuid.UUID, acti
 
 		pay = p
 
+		tx.Model(&payment.Payment{}).Where("id = ?", id).Updates(p)
+
 		return nil
 	})
 	if err != nil {

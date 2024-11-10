@@ -107,8 +107,10 @@ func NewRestaurant(
 
 func (o *Order) SetOrderStatus(status OrderStatus) error {
 	if status == OrderCreated {
-		if o.OrderStatus != OrderCreated {
+		if o.OrderStatus != OrderCreated && o.OrderStatus != "" {
 			return fmt.Errorf("order status: %s", o.OrderStatus)
+		} else {
+			o.OrderStatus = status
 		}
 	}
 	if status == OrderCanceled {
@@ -135,8 +137,10 @@ func (o *Order) IsCanceledOrCompleted() bool {
 
 func (o *Order) SetRestaurantStatus(status RestaurantStatus) error {
 	if status == ReceivedOrder {
-		if o.RestaurantStatus != ReceivedOrder {
+		if o.RestaurantStatus != ReceivedOrder && o.RestaurantStatus != "" {
 			return fmt.Errorf("restaurant status: %s", o.RestaurantStatus)
+		} else {
+			o.RestaurantStatus = status
 		}
 	}
 	if status == PreparingOrder {

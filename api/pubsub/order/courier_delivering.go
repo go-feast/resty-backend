@@ -18,8 +18,7 @@ func (h *Handler) CourierDelivering() message.NoPublishHandlerFunc {
 		}
 
 		_, err := h.orderRepository.Transact(msg.Context(), event.OrderID, func(o *order.Order) error {
-			o.CourierStatus = order.CourierDelivering
-			return nil
+			return o.SetCourierStatus(order.CourierDelivering)
 		})
 		if err != nil {
 			return err

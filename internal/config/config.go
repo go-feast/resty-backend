@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 // EnvironmentProvider by default os.Getenv
 type EnvironmentProvider interface {
@@ -25,4 +28,8 @@ func DBConn() string {
 
 func Addr() string {
 	return envProvider.Getenv("ADDR")
+}
+
+func Kafka() []string {
+	return strings.Split(envProvider.Getenv("KAFKA"), ";")
 }

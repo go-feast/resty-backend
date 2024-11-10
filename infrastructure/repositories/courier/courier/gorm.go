@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/go-feast/resty-backend/internal/domain/courier"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +17,20 @@ func InitializeCourierOrDie(db *gorm.DB) {
 
 type GormCourierRepository struct {
 	db *gorm.DB
+}
+
+func (g *GormCourierRepository) GetOrder(ctx context.Context, id uuid.UUID) (*courier.Order, error) {
+	var o courier.Order
+	err := g.db.WithContext(ctx).Model(&courier.Order{}).Where("id = ?", id).First(&o)
+	if err != nil {
+		return nil, err.Error
+	}
+
+	return &o, nil
+}
+
+func (g *GormCourierRepository) CreateOrder(ctx context.Context, order *courier.Order) error {
+	return g.db.WithContext(ctx).Create(order).Error
 }
 
 func NewGormCourierRepository(db *gorm.DB) *GormCourierRepository {
@@ -38,14 +53,16 @@ func (g *GormCourierRepository) AssignOrder(ctx context.Context, cid, oid uuid.U
 	var c courier.Courier
 	err := g.db.WithContext(ctx).Preload("AssignedOrders").Where("id = ?", cid).First(&c)
 	if err.Error != nil {
-		return err.Error
+		return errors.Wrap(err.Error, "failed to find courier")
 	}
 
 	var o courier.Order
 	err = g.db.WithContext(ctx).Model(&courier.Order{}).Where("id = ?", oid).First(&o)
 	if err.Error != nil {
-		return err.Error
+		return errors.Wrap(err.Error, "failed to find order")
 	}
+
+	o.CourierID = &cid
 
 	c.AssignedOrders = append(c.AssignedOrders, o)
 

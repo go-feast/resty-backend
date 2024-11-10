@@ -1,12 +1,12 @@
-package order
+package payment
 
 import (
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/go-feast/resty-backend/internal/domain/order"
+	"github.com/go-feast/resty-backend/internal/domain/payment"
 	"github.com/google/uuid"
 )
 
-func (h *Handler) OrderCanceled() message.NoPublishHandlerFunc {
+func (h *Handler) OrderCompleted() message.NoPublishHandlerFunc {
 	type Event struct {
 		OrderID uuid.UUID `json:"order_id"`
 	}
@@ -17,10 +17,9 @@ func (h *Handler) OrderCanceled() message.NoPublishHandlerFunc {
 			return err
 		}
 
-		_, err := h.orderRepository.Transact(msg.Context(), event.OrderID, func(o *order.Order) error {
-			return o.SetOrderStatus(order.Canceled)
-		})
-		if err != nil {
+		if _, err := h.paymentRepository.Transact(msg.Context(), event.OrderID, func(p *payment.Payment) error {
+			return p.SetOrderStatus(payment.OrderCompleted)
+		}); err != nil {
 			return err
 		}
 

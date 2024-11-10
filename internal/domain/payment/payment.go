@@ -49,8 +49,10 @@ func (p *Payment) IsOrderCanceledOrCompleted() bool {
 
 func (p *Payment) SetPaymentStatus(status PaymentStatus) error {
 	if status == Waiting {
-		if p.PaymentStatus != Waiting && p.IsOrderCanceledOrCompleted() {
+		if p.PaymentStatus != Waiting && p.IsOrderCanceledOrCompleted() && p.PaymentStatus != "" {
 			return fmt.Errorf("payment status: %s; order status: %s", p.PaymentStatus, p.OrderStatus)
+		} else {
+			p.PaymentStatus = status
 		}
 	}
 	if status == Paid {
@@ -73,8 +75,10 @@ func (p *Payment) SetPaymentStatus(status PaymentStatus) error {
 
 func (p *Payment) SetOrderStatus(status OrderStatus) error {
 	if status == OrderCreated {
-		if p.OrderStatus != OrderCreated {
+		if p.OrderStatus != OrderCreated && p.OrderStatus != "" {
 			return fmt.Errorf("order satus: %s", p.OrderStatus)
+		} else {
+			p.OrderStatus = status
 		}
 	}
 	if status == OrderCanceled {

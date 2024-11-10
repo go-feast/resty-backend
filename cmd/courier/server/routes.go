@@ -23,7 +23,7 @@ func routes(e *gin.Engine) {
 	gormcourier.InitializeCourierOrDie(db)
 
 	courierRepository := gormcourier.NewGormCourierRepository(db)
-	handler := apicourier.NewHandler(courierRepository, &pubsub.NopPublisher{})
+	handler := apicourier.NewHandler(courierRepository, pubsub.NewKafkaPub())
 
 	e.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
 
@@ -31,9 +31,11 @@ func routes(e *gin.Engine) {
 	{
 		couriers := v1.Group("/couriers")
 		couriers.POST("/", handler.CreateCourier())
+		couriers.GET("/:id", handler.GetCourier())
 		couriers.POST("/:cid/:oid", handler.AssignCourier())
 
 		orders := v1.Group("/orders/:id")
+		orders.GET("/", handler.GetOrder())
 		orders.POST("/took", handler.TookOrder())
 		orders.POST("/delivering", handler.DeliveringOrder())
 		orders.POST("/delivered", handler.DeliveredOrder())

@@ -29,7 +29,7 @@ func (h *Handler) AssignCourier() gin.HandlerFunc {
 			return
 		}
 
-		msg := message.NewMessage(message.Event{"order_id": r.OrderID}, json.Marshal)
+		msg := message.NewMessage(message.Event{"order_id": r.OrderID, "courier_id": r.CourierID}, json.Marshal)
 		err = h.publisher.Publish(courier.Assigned.String(), msg)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -18,8 +18,7 @@ func (h *Handler) PaymentCanceled() message.NoPublishHandlerFunc {
 		}
 
 		_, err := h.orderRepository.Transact(msg.Context(), event.OrderID, func(o *order.Order) error {
-			o.PaymentStatus = order.PaymentCanceled
-			return nil
+			return o.SetPaymentStatus(order.PaymentCanceled)
 		})
 		if err != nil {
 			return err

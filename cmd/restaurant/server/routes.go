@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	httprestaurant "github.com/go-feast/resty-backend/api/http/restaurant"
 	"github.com/go-feast/resty-backend/infrastructure/pubsub"
@@ -25,7 +26,7 @@ func routes(e *gin.Engine) {
 
 	restaurantRepository := gormrestaurant.NewGormRestaurantRepository(db)
 	orderRepository := gormorder.NewGormRepository(db)
-	handler := httprestaurant.NewHandler(restaurantRepository, &pubsub.NopPublisher{}, orderRepository)
+	handler := httprestaurant.NewHandler(restaurantRepository, pubsub.NewKafkaPub(), orderRepository, json.Marshal, json.Unmarshal)
 
 	e.GET("/health", func(c *gin.Context) { c.Status(http.StatusOK) })
 
